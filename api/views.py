@@ -1,17 +1,67 @@
 # pyright: strict
-# Create your views here.
+
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse, HttpRequest
 
-def list_products():
-    return HttpResponse('{ "products": ["product1", "product2"]}')
+import json
+from typing import List, TypedDict
+from decimal import Decimal
 
-def create_product():
-    return HttpResponse(status=201)
+from .models import Product
 
-def products(request: HttpRequest) -> HttpResponse:
-    if request.method == "GET":
+ProductData = TypedDict("ProductData", {
+    "title": str,
+    "description": str,
+    "price": float
+})
+
+def list_products() -> HttpResponse:
+    try:
+        products = Product.objects.get_queryset()
+
+        productsData: List[ProductData] = []
+        for product in products:
+            data = ProductData(
+                title=product.title,
+                description=product.description,
+                price=float(product.price),
+            )
+            productsData.append(data)
+
+        serialized = json.dumps(productsData)
+        res = HttpResponse(serialized)
+        res["Content-Type"] = "application/json"
+        res.status_code = 200
+
+        return res
+
+    except:
+        return HttpResponse(status=500)
+
+# The url does not exist, the exercise assumes that that endpoint is already implemented
+@login_required(login_url="/login")
+def create_product(req: HttpRequest) -> HttpResponse:
+    try:
+        # read request body into product
+        body = req.body.decode("utf-8")
+        data = json.loads(body)
+
+        product = Product()
+        product.title = data["title"]
+        product.description = data["description"]
+        product.price = Decimal(data["price"])
+        product.save()
+
+        return HttpResponse(status=201)
+    core.products
+        return HttpResponse(status=400)
+
+@csrf_exempt
+def products(req: HttpRequest) -> HttpResponse:
+    if req.method == "GET":
         return list_products()
-    elif request.method == "POST":
-        return create_product()
+    elif req.method == "POST":
+        return create_product(req)
     else:
         return HttpResponse(status=404)
