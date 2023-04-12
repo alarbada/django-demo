@@ -50,6 +50,7 @@ def create_product(req: HttpRequest) -> HttpResponse:
 
     return HttpResponse(status=201)
 
+# This django app is an api server, so it doesn't need csrf protection.
 @csrf_exempt
 def products(req: HttpRequest) -> HttpResponse:
     try:
